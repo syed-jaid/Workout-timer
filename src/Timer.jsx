@@ -1,21 +1,28 @@
 import React, { useEffect, useState, useRef } from "react";
 
 const TimerLoop = () => {
-  const [phase, setPhase] = useState("idle"); // 'idle' | 'countUp' | 'release' | 'countDown' | 'ready'
-  const [count, setCount] = useState(1);
+  const [phase, setPhase] = useState("idle");
+  const [count, setCount] = useState(0);
 
-  const [countUpSeconds, setCountUpSeconds] = useState(6);
-  const [countDownSeconds, setCountDownSeconds] = useState(10);
+  const [countUpSeconds, setCountUpSeconds] = useState(7);
+  const [countDownSeconds, setCountDownSeconds] = useState(14);
 
   const intervalRef = useRef(null);
 
   const releaseAudio = useRef(new Audio("/stop-rest.mp3"));
   const readyAudio = useRef(new Audio("/ready-fight.mp3"));
+  const tickingAudio = useRef(new Audio("/clock-ticking.mp3"));
+
+  useEffect(() => {
+    releaseAudio.current.volume = 0.5;
+    readyAudio.current.volume = 0.5;
+    tickingAudio.current.volume = 0.1;
+  }, []);
 
   useEffect(() => {
     clearInterval(intervalRef.current);
 
-    if (phase === "countUp") {
+    if (phase === "Exercise") {
       setCount(1);
       intervalRef.current = setInterval(() => {
         setCount((prev) => {
@@ -33,11 +40,11 @@ const TimerLoop = () => {
     if (phase === "release") {
       setTimeout(() => {
         setCount(1);
-        setPhase("countDown");
+        setPhase("Rest");
       }, 1000);
     }
 
-    if (phase === "countDown") {
+    if (phase === "Rest") {
       intervalRef.current = setInterval(() => {
         setCount((prev) => {
           if (prev >= countDownSeconds) {
@@ -54,7 +61,7 @@ const TimerLoop = () => {
     if (phase === "ready") {
       setTimeout(() => {
         setCount(1);
-        setPhase("countUp");
+        setPhase("Exercise");
       }, 1000);
     }
 
@@ -63,66 +70,58 @@ const TimerLoop = () => {
 
   const handleStart = () => {
     if (phase === "idle") {
+      readyAudio.current.play();
+      tickingAudio.current.loop = true;
+      tickingAudio.current.play();
       setCount(1);
-      setPhase("countUp");
+      setPhase("Exercise");
     }
   };
 
   const handleReset = () => {
     clearInterval(intervalRef.current);
-    setCount(1);
+    setCount(0);
     setPhase("idle");
+    tickingAudio.current.pause();
+    tickingAudio.current.currentTime = 0;
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white px-4">
-      <h1 className="text-4xl font-bold mb-6">⏱️ Custom Loop Timer</h1>
-      <h1 className="text-6xl font-bold mb-2">{count}</h1>
-      <div className="flex gap-4 mb-6">
+    <div className="container">
+      <h1 className="title">⏱️ Workout Timer</h1>
+      <h1 className="counter">{count}</h1>
+
+      <div className="inputs">
         <div>
-          <label className="block mb-1">Count Up Seconds</label>
+          <label>Single Set time</label>
           <input
             type="number"
             min={1}
             value={countUpSeconds}
             onChange={(e) => setCountUpSeconds(Number(e.target.value))}
             disabled={phase !== "idle"}
-            className="text-black px-3 py-2 rounded"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Countdown Seconds</label>
+          <label>Rest time</label>
           <input
             type="number"
             min={1}
             value={countDownSeconds}
             onChange={(e) => setCountDownSeconds(Number(e.target.value))}
             disabled={phase !== "idle"}
-            className="text-black px-3 py-2 rounded"
           />
         </div>
       </div>
 
-      <div className="text-2xl capitalize mb-6">
-        {phase === "idle" ? "Press Start" : phase}
-      </div>
+      <div className="status">{phase === "idle" ? "Press Start" : phase}</div>
 
-      <div className="flex gap-4">
-        <button
-          onClick={handleStart}
-          disabled={phase !== "idle"}
-          className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-semibold py-2 px-6 rounded"
-        >
+      <div className="buttons">
+        <button onClick={handleStart} disabled={phase !== "idle"}>
           Start
         </button>
-
-        <button
-          onClick={handleReset}
-          className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded"
-        >
-          Reset
-        </button>
+        <button onClick={handleReset}>Stop</button>
       </div>
     </div>
   );
